@@ -1,0 +1,91 @@
+package db
+
+import (
+	"context"
+	"database/sql"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+
+func createRandomCategory(t *testing.T) Category{
+	
+	category, err := testQueries.CreateCategory(context.Background(), "poeziq")
+
+	require.NoError(t, err)
+
+	require.NotEmpty(t, category)
+
+	require.Equal(t, "poeziq", category.Name)
+
+	return category
+}
+
+func TestCreateCategory(t *testing.T) {
+	createRandomCategory(t)
+}
+
+func TestGetCategory(t *testing.T) {
+	
+	category1 := createRandomCategory(t)
+
+	category2, err := testQueries.GetCategory(context.Background(), category1.ID)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, category2)
+
+	require.Equal(t, category1.Name, category2.Name)
+
+
+}
+
+func TestUpdateCategory(t *testing.T) {
+
+	category1 := createRandomCategory(t)
+
+	arg := UpdateCategoryParams {
+		ID: category1.ID,
+		Name: "horror",
+	}
+
+	category2, err := testQueries.UpdateCategory(context.Background(), arg)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, category2)
+
+
+	require.Equal(t, category1.ID, category2.ID)
+	require.Equal(t, arg.Name, category2.Name)
+}
+
+func TestDeleteCategory(t *testing.T) {
+
+	category1 := createRandomCategory(t)
+
+	category2, err := testQueries.DeleteCategory(context.Background(), category1.ID)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, category2)
+
+	require.Equal(t, category1.Name, category2.Name)
+
+	category3 , err := testQueries.GetCategory(context.Background(), category1.ID)
+	require.Error(t, err)
+	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.Empty(t, category3)
+}
+
+func TestListCategories(t *testing.T) {
+
+	for i := 0; i < 10; i++ {
+		createRandomCategory(t)
+	}
+
+	categories , err := testQueries.ListCategories(context.Background())
+	require.NoError(t , err)
+
+	for _, category := range categories{
+		require.NotEmpty(t, category)
+	}
+}
